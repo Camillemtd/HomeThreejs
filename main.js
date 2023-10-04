@@ -1,5 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import * as dat from 'lil-gui'
+
+// Debug
+const gui = new dat.GUI()
 
 // Textures
 
@@ -32,7 +36,7 @@ const matcapWall2 = textureLoader.load("matcap/mapcapWall2.jpeg");
 
 // Texture Desk
 const matcapOctahedron = textureLoader.load("matcap/3.png");
-const matcapDeskplate = textureLoader.load("/matcap/matcapDesk.jpeg");
+const DeskplateBaseColor = textureLoader.load("/Wood_025_basecolor.jpg");
 
 // Texture Carpet
 const carpetMatcap = textureLoader.load('/matcap/matcapCarpet.jpeg')
@@ -59,10 +63,36 @@ const canvas = document.querySelector("canvas.webgl");
 // Scene
 const scene = new THREE.Scene();
 
+scene.background = new THREE.Color(0xf0e6ef); 
+
 // Lights 
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 2)
+const ambientLight = new THREE.AmbientLight(0xffffff, 1)
 scene.add(ambientLight)
+
+// Directional light
+const directionalLight = new THREE.DirectionalLight(0xffffff, 3)
+directionalLight.position.set(1, 2, 0)
+gui.add(directionalLight, 'intensity').min(0).max(3).step(0.001)
+gui.add(directionalLight.position, 'x').min(- 5).max(5).step(0.001)
+gui.add(directionalLight.position, 'y').min(- 5).max(5).step(0.001)
+gui.add(directionalLight.position, 'z').min(- 5).max(5).step(0.001)
+scene.add(directionalLight)
+
+directionalLight.castShadow = true
+
+directionalLight.shadow.mapSize.width = 1024
+directionalLight.shadow.mapSize.height = 1024
+directionalLight.shadow.camera.near = 1
+directionalLight.shadow.camera.far = 3
+directionalLight.shadow.radius = 10
+
+const directionalLightCameraHelper = new THREE.CameraHelper(directionalLight.shadow.camera)
+directionalLightCameraHelper.visible = false
+scene.add(directionalLightCameraHelper)
+const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 0.2)
+scene.add(directionalLightHelper)
+
 
 /**
  * Sizes
@@ -90,25 +120,27 @@ window.addEventListener("resize", () => {
 
 // Floor
 const mapGeometry = new THREE.BoxGeometry(1.1, 0.1, 1.1);
-const mapMaterial = new THREE.MeshBasicMaterial({ map: basecolorFloor});
+const mapMaterial = new THREE.MeshStandardMaterial({ map: basecolorFloor});
 const mapMesh = new THREE.Mesh(mapGeometry, mapMaterial);
+mapMesh.receiveShadow = true
 mapMesh.position.y = -0.3;
 mapMesh.position.x = -0.05;
 mapMesh.position.z = -0.05;
 
 // Wall1
 const wallGeometry = new THREE.BoxGeometry(1, 0.1, 1);
-const wall1Material = new THREE.MeshMatcapMaterial({ map: basecolorWall });
-
+const wall1Material = new THREE.MeshStandardMaterial({ map: basecolorWall });
 const wall1Mesh = new THREE.Mesh(wallGeometry, wall1Material);
+wall1Mesh.receiveShadow = true
 wall1Mesh.rotation.z = Math.PI * 0.5;
 wall1Mesh.rotation.x = Math.PI * 0.5;
 wall1Mesh.position.x = -0.55;
 wall1Mesh.position.y = 0.25;
 
 // Wall2
-const wall2Material = new THREE.MeshMatcapMaterial({ matcap: matcapWall2 });
+const wall2Material = new THREE.MeshStandardMaterial({ color: 'white'});
 const wall2Mesh = new THREE.Mesh(wallGeometry, wall2Material);
+wall2Mesh.receiveShadow = true
 wall2Mesh.rotation.z = Math.PI * 0.5;
 wall2Mesh.rotation.y = Math.PI * 0.5;
 
@@ -120,13 +152,13 @@ wall2Mesh.position.z = -0.55;
 const deskGroup = new THREE.Group
 
 const deskplateGeometry = new THREE.BoxGeometry(0.3, 0.01, 0.5);
-
-const deskplateMaterial = new THREE.MeshMatcapMaterial({ matcap: matcapDeskplate });
+const deskplateMaterial = new THREE.MeshStandardMaterial({ map: DeskplateBaseColor  });
 const deskplateMesh = new THREE.Mesh(deskplateGeometry, deskplateMaterial);
+deskplateMesh.castShadow = true
 deskplateMesh.position.x = -0.4;
 
 const deskfeetGeometry = new THREE.CylinderGeometry(0.01, 0.01, 0.3, 20);
-const deskfeetMaterial = new THREE.MeshBasicMaterial({ color: "white" });
+const deskfeetMaterial = new THREE.MeshStandardMaterial({ color: "white" });
 
 const deskfeet1Mesh = new THREE.Mesh(deskfeetGeometry, deskfeetMaterial);
 deskfeet1Mesh.position.set(-0.465, -0.15, 0.2);
@@ -153,13 +185,20 @@ const octahedronMesh = new THREE.Mesh(octahedronGeometry, octahedronMaterial);
 octahedronMesh.position.set(-0.42, 0.14, -0.18);
 
 deskGroup.add(deskfeet1Mesh, deskfeet2Mesh, deskfeet3Mesh, deskfeet4Mesh, deskplateMesh, coneMesh, octahedronMesh)
+deskGroup.traverse((objet) => {
+  if (objet instanceof THREE.Mesh) {
+    objet.castShadow = true;
+  }
+});
 
 // Carpet
 const carpetGeometry = new THREE.BoxGeometry(0.01, 0.5, 0.5);
-const carpetMaterial = new THREE.MeshMatcapMaterial({ matcap: matcapBook1});
+const carpetMaterial = new THREE.MeshStandardMaterial({ map: matcapBook1});
 const carpetMesh = new THREE.Mesh(carpetGeometry, carpetMaterial);
 carpetMesh.rotation.z = Math.PI * 0.5
 carpetMesh.position.set(0.1, -0.24, 0.1)
+carpetMesh.receiveShadow = true
+carpetMesh.castShadow = true
 
 
 // Library
@@ -167,7 +206,7 @@ carpetMesh.position.set(0.1, -0.24, 0.1)
 const library1Group = new THREE.Group();
 
 const libraryGeometry = new THREE.BoxGeometry(0.02, 0.17, 0.17)
-const libraryMaterial = new THREE.MeshMatcapMaterial({ matcap: libraryMatcap})
+const libraryMaterial = new THREE.MeshStandardMaterial({ map: libraryMatcap})
 const library1LeftMesh = new THREE.Mesh(libraryGeometry, libraryMaterial)
 library1LeftMesh.position.z = - 0.42
 library1LeftMesh.position.y =  0.5
@@ -185,6 +224,11 @@ const library1RightMesh = new THREE.Mesh(libraryGeometry, libraryMaterial)
 library1RightMesh.position.set(0.19, 0.5, - 0.42)
 
 library1Group.add(library1LeftMesh, library1TopMesh, library1BottomMesh, library1RightMesh);
+library1Group.traverse((objet) => {
+  if (objet instanceof THREE.Mesh) {
+    objet.castShadow = true;
+  }
+});
 
 const library2Group = new THREE.Group();
 
@@ -229,6 +273,12 @@ bookGroup.add(book3Mesh)
 bookGroup.position.set(- 0.27, 0.18, - 0.42)
 
 library2Group.add(library2LeftMesh, library2TopMesh, library2BottomMesh, library2RightMesh);
+library2Group.traverse((objet) => {
+  if (objet instanceof THREE.Mesh) {
+    objet.castShadow = true;
+    objet.receiveShadow = true;
+  }
+});
 
 library2Group.position.set(- 0.3, - 0.3, 0)
 
@@ -252,6 +302,11 @@ const library3RightMesh = new THREE.Mesh(libraryGeometry, libraryMaterial)
 library3RightMesh.position.set(0.19, 0.5, - 0.42)
 
 library3Group.add(library3LeftMesh, library3TopMesh, library3BottomMesh, library3RightMesh);
+library3Group.traverse((objet) => {
+  if (objet instanceof THREE.Mesh) {
+    objet.castShadow = true;
+  }
+});
 
 library3Group.position.set(0.2, - 0.35, 0)
 
@@ -274,7 +329,7 @@ const woodMesh = new THREE.Mesh(woodGeometry, woodMaterial)
 woodMesh.position.y = 0.15
 
 const flowerGeometry = new THREE.RingGeometry(0.015, 0.06, 7)
-const flowerMaterial = new THREE.MeshMatcapMaterial({map: flower, matcap: matcapFlower})
+const flowerMaterial = new THREE.MeshMatcapMaterial({ matcap: matcapFlower})
 flowerMaterial.side = THREE.DoubleSide
 const flowerMesh = new THREE.Mesh(flowerGeometry, flowerMaterial)
 flowerMesh.position.set(0.006, 0.2, 0)
@@ -290,6 +345,7 @@ centerFlowerMesh.rotation.z = Math.PI * - 0.5
 plantGroup.add(potMesh, soilMesh, woodMesh, flowerMesh, centerFlowerMesh)
 plantGroup.position.set(- 0.4, - 0.18, 0.4)
 
+
 scene.add(
   mapMesh,
   wall1Mesh,
@@ -300,8 +356,10 @@ scene.add(
   library2Group,
   library3Group,
   bookGroup,
-  plantGroup
+  plantGroup,
 );
+
+directionalLight.lookAt(deskplateMesh)
 
 /**
  * Camera
@@ -331,6 +389,9 @@ const renderer = new THREE.WebGLRenderer({
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
 /**
  * Animate
