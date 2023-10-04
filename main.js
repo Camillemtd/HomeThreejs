@@ -42,6 +42,13 @@ const libraryMatcap = textureLoader.load('/matcap/matcapLibrary.jpeg')
 const matcapBook1 = textureLoader.load('/matcap/matcapBook1.jpeg')
 const matcapBook2 = textureLoader.load('/matcap/matcapBook2.jpeg')
 
+// Texture flower
+const matcapPot = textureLoader.load('/matcap/matcapPot.jpeg')
+const woodBasic = textureLoader.load('/flower/Bark_06_basecolor.jpg')
+const flower = textureLoader.load('/flower/Abstract_Organic_004_basecolor.jpg')
+const matcapFlower = textureLoader.load('/matcap/matcapFlower.jpeg')
+const soilBasic = textureLoader.load('/flower/Sand_005_baseColor.jpg')
+
 
 /**
  * Base
@@ -248,7 +255,40 @@ library3Group.add(library3LeftMesh, library3TopMesh, library3BottomMesh, library
 
 library3Group.position.set(0.2, - 0.35, 0)
 
+// Plant
+const plantGroup = new THREE.Group
 
+const potGeometry = new THREE.BoxGeometry(0.15, 0.15, 0.15)
+const planteMaterial = new THREE.MeshMatcapMaterial({ matcap: matcapPot})
+const potMesh = new THREE.Mesh(potGeometry, planteMaterial)
+
+const soilGeometry = new THREE.PlaneGeometry(0.1, 0.1)
+const soilMaterial = new THREE.MeshMatcapMaterial({ map: soilBasic})
+const soilMesh = new THREE.Mesh(soilGeometry, soilMaterial)
+soilMesh.position.y = 0.08
+soilMesh.rotation.x = - Math.PI * 0.5
+
+const woodGeometry = new THREE.CylinderGeometry(0.005, 0.005, 0.15, 20)
+const woodMaterial = new THREE.MeshMatcapMaterial({map: woodBasic})
+const woodMesh = new THREE.Mesh(woodGeometry, woodMaterial)
+woodMesh.position.y = 0.15
+
+const flowerGeometry = new THREE.RingGeometry(0.015, 0.06, 7)
+const flowerMaterial = new THREE.MeshMatcapMaterial({map: flower, matcap: matcapFlower})
+flowerMaterial.side = THREE.DoubleSide
+const flowerMesh = new THREE.Mesh(flowerGeometry, flowerMaterial)
+flowerMesh.position.set(0.006, 0.2, 0)
+flowerMesh.rotation.y = Math.PI * 0.5
+
+const centerFlowerGeometry = new THREE.ConeGeometry(0.03, 0.01, 7)
+const centerFlowerMaterial = new THREE.MeshMatcapMaterial({matcap : matcapOctahedron})
+const centerFlowerMesh = new THREE.Mesh(centerFlowerGeometry, centerFlowerMaterial)
+centerFlowerMesh.position.x = 0.008
+centerFlowerMesh.position.y = 0.20
+centerFlowerMesh.rotation.z = Math.PI * - 0.5
+
+plantGroup.add(potMesh, soilMesh, woodMesh, flowerMesh, centerFlowerMesh)
+plantGroup.position.set(- 0.4, - 0.18, 0.4)
 
 scene.add(
   mapMesh,
@@ -259,7 +299,8 @@ scene.add(
   library1Group,
   library2Group,
   library3Group,
-  bookGroup
+  bookGroup,
+  plantGroup
 );
 
 /**
@@ -301,7 +342,9 @@ const tick = () => {
 
   //Animation
   octahedronMesh.rotation.x = Math.cos(elapsedTime);
-  octahedronMesh.rotation.y = Math.cos(elapsedTime);
+  octahedronMesh.rotation.y = Math.sin(elapsedTime);
+
+  flowerMesh.rotation.x = Math.cos(elapsedTime);
   // Update controls
   controls.update();
 
